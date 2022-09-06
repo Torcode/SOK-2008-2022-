@@ -1,0 +1,57 @@
+library(hrbrthemes)
+library(gglorenz)
+library(PxWebApiData)
+library(janitor)
+library(dplyr)
+library(tidyr)
+
+#Henter SSB data
+variables <- ApiData("https://data.ssb.no/api/v0/en/table/12558/", 
+                     returnMetaFrames = TRUE)
+names(variables)
+
+#Henter verdier
+values <- ApiData("https://data.ssb.no/api/v0/en/table/12558/", 
+                  returnMetaData = TRUE)
+#Kommuner
+values[[1]]$values
+#disponibel inntekt
+values[[2]]$values # 00 = Samlet inntekt, 00S=Inntekt etter skatt
+#Desilerverdier
+values[[3]]$values
+#statistikkvariabler
+values[[4]]$values
+#År som verdier
+values[[5]]$values
+
+
+
+datalist<-ApiData("https://data.ssb.no/api/v0/en/table/12558/",
+              Tid =c("2005","2020"), # Velg årene 2005 og 2020
+              Desiler=c("01", "02", "03" ,"04", "05", "06" ,"07", "08" ,"09", "10"), #Vi velger alle desiler
+              InntektSkatt="00", #Vi velger samlet inntekt
+              ContentsCode="VerdiDesil", #Velger den høyeste verdien i desilen
+              Region=c("5401","1902"))#Tromsø endret kommunenummer i 2020
+
+
+#Gjøre list om til dataframe
+dataFrame <- as.data.frame(datalist)
+dataFrame
+
+#Fjerner NA
+dataFrame %>% 
+  na.omit()
+
+#lage lorenzkurve
+dataFrame %>%
+  ggplot(aes(x=dataset.value,colour=dataset.Tid)) +
+  stat_lorenz(desc = FALSE) +
+  coord_fixed() +
+  geom_abline(linetype = "dashed") +
+  theme_minimal() +
+  hrbrthemes::scale_x_percent() +
+  hrbrthemes::scale_y_percent() +
+  labs(x = "Befolkning Tromsø",
+       y = "Inntekt Tromsø",
+       title = " Lorenz-kurver for inntektsfodelingen i Tromsø kommune")
+
